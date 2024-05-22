@@ -1,0 +1,32 @@
+package com.example.weatherapplication.data.model.DailyWeatherForecast
+
+data class Night(
+    val CloudCover: Int,
+    val Evapotranspiration: com.example.weatherapplication.data.model.DailyWeatherForecast.Evapotranspiration,
+    val HasPrecipitation: Boolean,
+    val HoursOfIce: Int,
+    val HoursOfPrecipitation: Int,
+    val HoursOfRain: Int,
+    val HoursOfSnow: Int,
+    val Ice: com.example.weatherapplication.data.model.DailyWeatherForecast.Ice,
+    val IceProbability: Int,
+    val Icon: Int,
+    val IconPhrase: String,
+    val LongPhrase: String,
+    val PrecipitationIntensity: String,
+    val PrecipitationProbability: Int,
+    val PrecipitationType: String,
+    val Rain: com.example.weatherapplication.data.model.DailyWeatherForecast.Rain,
+    val RainProbability: Int,
+    val RelativeHumidity: com.example.weatherapplication.data.model.DailyWeatherForecast.RelativeHumidity,
+    val ShortPhrase: String,
+    val Snow: com.example.weatherapplication.data.model.DailyWeatherForecast.Snow,
+    val SnowProbability: Int,
+    val SolarIrradiance: com.example.weatherapplication.data.model.DailyWeatherForecast.SolarIrradiance,
+    val ThunderstormProbability: Int,
+    val TotalLiquid: com.example.weatherapplication.data.model.DailyWeatherForecast.TotalLiquid,
+    val WetBulbGlobeTemperature: com.example.weatherapplication.data.model.DailyWeatherForecast.WetBulbGlobeTemperature,
+    val WetBulbTemperature: com.example.weatherapplication.data.model.DailyWeatherForecast.WetBulbTemperature,
+    val Wind: com.example.weatherapplication.data.model.DailyWeatherForecast.Wind,
+    val WindGust: com.example.weatherapplication.data.model.DailyWeatherForecast.WindGust
+)
