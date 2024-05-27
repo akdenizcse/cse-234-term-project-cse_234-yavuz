@@ -27,7 +27,7 @@ data class CurrentConditionsItem(
     val UVIndex: Double,
     val UVIndexText: String,
     val Visibility: Visibility,
-    val WeatherIcon: Double,
+    val WeatherIcon: Int,
     val WeatherText: String,
     val WetBulbGlobeTemperature: WetBulbGlobeTemperature,
     val WetBulbTemperature: WetBulbTemperature,

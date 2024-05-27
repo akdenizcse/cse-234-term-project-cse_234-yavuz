@@ -10,7 +10,7 @@ data class Day(
     val HoursOfSnow: Double,
     val Ice: Ice,
     val IceProbability: Double,
-    val Icon: Double,
+    val Icon: Int,
     val IconPhrase: String,
     val LongPhrase: String,
     val PrecipitationIntensity: String,

@@ -1,7 +1,7 @@
 package com.example.weatherapplication.data.model.DailyWeatherForecast
 
 data class Moon(
-    val Age: Int,
+    val Age: Double,
     val EpochRise: Int,
     val EpochSet: Int,
     val Phase: String,

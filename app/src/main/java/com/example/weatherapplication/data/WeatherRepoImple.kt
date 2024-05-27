@@ -1,10 +1,10 @@
 package com.example.weatherapplication.data
 
-import com.example.weatherapplication.RetrofitInstance
 import com.example.weatherapplication.data.model.CurrentConditionsResponse.CurrentConditions
 import com.example.weatherapplication.data.model.DailyWeatherForecast.DailyWeatherForecast
 import com.example.weatherapplication.data.model.HourlyData.HourlyData
 import com.example.weatherapplication.data.model.LocationDataResponse.LocationData
+import com.example.weatherapplication.data.model.SearchValues.SearchValues
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import okio.IOException
@@ -30,6 +30,27 @@ class WeatherRepoImple(
                 return@flow
             }
             emit(Result.Success(locationFromApi.body()))
+        }
+    }
+
+    override suspend fun getLocationDataWithLocationKey(
+        apikey: String,
+        locationKey: String
+    ): Flow<Result<LocationData>> {
+        return flow {
+            val locationDataFromApi = try{
+                api.getLocationDataWithLocationKey(apikey = apikey, locationKey = locationKey)
+            }catch (e: IOException){
+                e.printStackTrace()
+                emit(Result.Error(message = "IO Exception"))
+                return@flow
+
+            }catch (e: HttpException){
+                e.printStackTrace()
+                emit(Result.Error(message = "HTTP Exception"))
+                return@flow
+            }
+            emit(Result.Success(locationDataFromApi.body()))
         }
     }
 
@@ -88,6 +109,26 @@ class WeatherRepoImple(
                 return@flow
             }
             emit(Result.Success(dailyForecastData.body()))
+        }
+    }
+
+    override suspend fun getKeyByTextSearch(
+        apikey: String,
+        q: String
+    ): Flow<Result<List<SearchValues>>> {
+        return  flow {
+            val searchResults = try{
+                api.getKeyByTextSearch(apikey, q)
+            }catch (e: IOException){
+                e.printStackTrace()
+                emit(Result.Error(message = "IO Exception"))
+                return@flow
+            }catch (e: HttpException){
+                e.printStackTrace()
+                emit(Result.Error(message = "HTTP Exception"))
+                return@flow
+            }
+            emit(Result.Success(searchResults.body()))
         }
     }
 

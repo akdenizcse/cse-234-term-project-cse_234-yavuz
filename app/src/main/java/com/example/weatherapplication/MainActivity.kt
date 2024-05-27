@@ -8,9 +8,21 @@ import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Text
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.compose.NavHost
@@ -18,7 +30,9 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.weatherapplication.data.WeatherRepoImple
 import com.example.weatherapplication.presentation.FavoritesScreen
+import com.example.weatherapplication.presentation.LoginScreen
 import com.example.weatherapplication.presentation.MainViewModel
+import com.example.weatherapplication.presentation.SearchScreen
 import com.example.weatherapplication.presentation.WeatherApp
 import com.example.weatherapplication.ui.theme.WeatherApplicationTheme
 import com.google.android.gms.location.FusedLocationProviderClient
@@ -42,13 +56,14 @@ val fontFamily = FontFamily(
     Font(R.font.lexend_thin, FontWeight.Thin)
 )
 
-var latitude: String?=""
-var longitude: String?=""
+var latitude: String? = ""
+var longitude: String? = ""
 
 class MainActivity : ComponentActivity() {
 
     private lateinit var permission: LocationPermission
     private lateinit var fusedLocationClient: FusedLocationProviderClient
+
     @SuppressLint("MissingPermission", "SuspiciousIndentation")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -56,17 +71,19 @@ class MainActivity : ComponentActivity() {
         permission = LocationPermission()
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
 
-        if(permission.isLocationGranted(this)){
-            fusedLocationClient.getCurrentLocation(Priority.PRIORITY_HIGH_ACCURACY,object : CancellationToken(){
-                override fun onCanceledRequested(p0: OnTokenCanceledListener) = CancellationTokenSource().token
-                override fun isCancellationRequested() = false
+        if (permission.isLocationGranted(this)) {
+            fusedLocationClient.getCurrentLocation(Priority.PRIORITY_HIGH_ACCURACY,
+                object : CancellationToken() {
+                    override fun onCanceledRequested(p0: OnTokenCanceledListener) =
+                        CancellationTokenSource().token
 
-            }).addOnSuccessListener { location: Location? ->
-                if (location == null){
+                    override fun isCancellationRequested() = false
+
+                }).addOnSuccessListener { location: Location? ->
+                if (location == null) {
                     Toast.makeText(this, "Cannot Get Location", Toast.LENGTH_SHORT).show()
                     Log.d(TAG, "KONUM ALINAMADI")
-            }
-                else{
+                } else {
                     latitude = location.latitude.toString()
                     Log.d(TAG, "LATITUDE == $latitude")
                     longitude = location.longitude.toString()
@@ -74,12 +91,12 @@ class MainActivity : ComponentActivity() {
 
                 }
             }
-        }else{
+        } else {
             permission.requestLocationPermission(this)
         }
 
         val viewModel by viewModels<MainViewModel>(factoryProducer = {
-            object : ViewModelProvider.Factory{
+            object : ViewModelProvider.Factory {
                 override fun <T : ViewModel> create(modelClass: Class<T>): T {
                     return MainViewModel(WeatherRepoImple(RetrofitInstance.Api))
                             as T
@@ -88,25 +105,45 @@ class MainActivity : ComponentActivity() {
         }
         )
 
-            setContent {
-                WeatherApplicationTheme {
-                    val navController = rememberNavController()
-                    NavHost(
-                        navController = navController,
-                        startDestination = Screen.MainScreen.route
-                    ) {
-                        composable(route = Screen.MainScreen.route){
-                            WeatherApp(navController = navController, mainViewModel = viewModel )
-                        }
+        setContent {
+            WeatherApplicationTheme {
+                val navController = rememberNavController()
+                var isLoggedIn by remember { mutableStateOf(false) }
+                var username by remember { mutableStateOf("") }
 
-                        composable(route = Screen.FavoritesScreen.route){
-                            FavoritesScreen()
-                        }
+                NavHost(
+                    navController = navController,
+                    startDestination = Screen.MainScreen.route
+                ) {
+                    composable(route = Screen.MainScreen.route) {
+                        WeatherApp(navController = navController, mainViewModel = viewModel)
+                    }
+
+                    composable(
+                        route = Screen.FavoritesScreen.route,
+                    ) {
+                        FavoritesScreen(mainViewModel = viewModel, navController = navController)
+                    }
+                    composable(
+                        route = Screen.SearchScreen.route
+                    ) {
+                        SearchScreen(mainViewModel = viewModel, navController = navController)
+                    }
+                    composable(
+                        route = Screen.LoginScreen.route
+                    ) {
+                            LoginScreen(navController= navController, onLoginClicked = {enteredUserName ->
+                                username = enteredUserName
+                                isLoggedIn = true
+                            }, isLoggedIn = isLoggedIn, userName = username)
+
                     }
                 }
             }
         }
+    }
 }
-fun getLatandLong():String{
-    return "$latitude,$longitude"
+
+fun getLatitudeandLongitude(): List<String> {
+    return listOf("$latitude", "$longitude")
 }

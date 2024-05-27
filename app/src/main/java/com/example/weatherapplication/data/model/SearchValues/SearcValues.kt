@@ -1,6 +1,6 @@
 package com.example.weatherapplication.data.model.SearchValues
 
-data class SearcValues(
+data class SearchValues(
     val AdministrativeArea: AdministrativeArea,
     val Country: Country,
     val Key: String,
