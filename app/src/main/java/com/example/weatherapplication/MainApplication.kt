@@ -2,7 +2,6 @@ package com.example.weatherapplication
 
 import android.app.Application
 import androidx.room.Room
-import androidx.room.migration.Migration
 import com.example.weatherapplication.data.citiesDB.CityDataBase
 import com.example.weatherapplication.data.db.FavoriteCitiesDatabase
 

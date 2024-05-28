@@ -1,7 +1,5 @@
 package com.example.weatherapplication.presentation
 
-import android.util.Log
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -14,6 +12,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
@@ -33,8 +32,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import com.example.weatherapplication.Screen
-import com.example.weatherapplication.TAG
 import com.example.weatherapplication.fontFamily
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -81,17 +78,7 @@ fun SearchScreen(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(bottom = 12.dp)
-                            .clickable {
-                                coroutineScope.launch {
-                                    mainViewModel.getLocationDataWithLocationKey(locationKey = searchResults[it].Key)
-                                    delay(1000)
-                                    Log.d(TAG, "search key is:"+ searchResults[it].Key)
-                                    mainViewModel.getCurrentData()
-                                    mainViewModel.getHourlyData()
-                                    mainViewModel.getDailyForecastData()
-                                }
-                            },
+                            .padding(bottom = 12.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
@@ -104,13 +91,27 @@ fun SearchScreen(
                             fontFamily = fontFamily,
                             fontWeight = FontWeight.W400,
                         )
+                        IconButton(onClick = {
+                            coroutineScope.launch {
+                                mainViewModel.getLocationDataWithLocationKey(locationKey = searchResults[it].Key)
+                                delay(400)
+                                mainViewModel.getCurrentData()
+                                mainViewModel.getHourlyData()
+                                mainViewModel.getDailyForecastData()
+                                delay(300)
+                                navController.popBackStack()
+                            }
+                        }
+                        ) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                                contentDescription = null,
+                                Modifier.size(32.dp),
+                                tint = Color.Black
+                            )
 
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowForward,
-                            contentDescription = null,
-                            Modifier.size(32.dp),
-                            tint = Color.Black
-                        )
+                        }
+
 
                     }
 

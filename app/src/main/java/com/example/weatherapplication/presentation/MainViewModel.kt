@@ -2,10 +2,9 @@ package com.example.weatherapplication.presentation
 
 import android.os.Handler
 import android.os.Looper
-import android.util.Log
+import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.weatherapplication.TAG
 import com.example.weatherapplication.data.Result
 import com.example.weatherapplication.data.WeatherRepository
 import com.example.weatherapplication.getLatitudeandLongitude
@@ -31,14 +30,20 @@ class MainViewModel(
     private val _showToastErrorChannel = Channel<Boolean>()
     val showToastErrorChannel = _showToastErrorChannel.receiveAsFlow()
 
+    private val _toastMessage = MutableLiveData<String?>()
+    val toastMessage: MutableLiveData<String?> get() = _toastMessage
+    private fun showToast(message: String) {
+        _toastMessage.value = message
+    }
 
+    fun clearToastMessage() {
+        _toastMessage.value = null
+    }
 
     init {
         isLoading(true)
-        Log.d(TAG, "loading value in starting of init" + _uiState.value.isLoading)
         viewModelScope.launch {
             waitUntil()
-            Log.d(TAG, "returned lat longi =" + getLatitudeandLongitude().toString())
             _uiState.update { currentState ->
                 currentState.copy(
                     latitude = getLatitudeandLongitude()[0],
@@ -49,21 +54,15 @@ class MainViewModel(
                 latitude = _uiState.value.latitude,
                 longitude = _uiState.value.longitude
             )
-            Log.d(TAG, "after location search" + _uiState.value.locationData.toString())
             delay(400)
-            Log.d(TAG, "HEREEEEEEEEE4")
             getCurrentData()
-            Log.d(TAG, "HEREEEEEEEEE5")
             getHourlyData()
-            Log.d(TAG, "HEREEEEEEEEE6")
             getDailyForecastData()
-            Log.d(TAG, "HEREEEEEEEEE7")
 
         }
-        Log.d(TAG, "loading value in the end of init" + _uiState.value.isLoading)
     }
 
-    fun isLoading(isLoading: Boolean) {
+    private fun isLoading(isLoading: Boolean) {
         _uiState.update { currentState ->
             currentState.copy(
                 isLoading = isLoading
@@ -87,24 +86,19 @@ class MainViewModel(
         }
     }
 
+
     suspend fun getLocationData(latitude: String, longitude: String) {
-        isLoading(true)
-        Log.d(TAG, "value passed to the getLocationData is $latitude,$longitude")
         weatherRepository.getLocationData(
             apikey = _uiState.value.apiKey,
             q = "$latitude,$longitude"
         ).collectLatest { result ->
             when (result) {
                 is Result.Error -> {
-                    _showToastErrorChannel.send(true)
-                    Log.d(TAG, "ERROR IN LOCATION API")
+                    result.message?.let { showToast(it) }
                 }
 
                 is Result.Success -> {
-                    Log.d(TAG, "NOERROR IN LOCATION API")
                     result.data?.let { LocationData ->
-                        Log.d(TAG, "returned location data =" + LocationData.toString())
-                        Log.d(TAG, " returned location key = " + LocationData.Key)
                         _uiState.update { currentState ->
                             currentState.copy(
                                 locationData = LocationData
@@ -117,21 +111,17 @@ class MainViewModel(
     }
 
     suspend fun getLocationDataWithLocationKey(locationKey: String) {
-        isLoading(true)
         weatherRepository.getLocationDataWithLocationKey(
             apikey = _uiState.value.apiKey,
             locationKey = locationKey
         ).collectLatest { result ->
             when (result) {
                 is Result.Error -> {
-                    _showToastErrorChannel.send(true)
-                    Log.d(TAG, "ERROR IN LOCATION API")
+                    result.message?.let { showToast(it) }
                 }
 
                 is Result.Success -> {
-                    Log.d(TAG, "NOERROR IN LOCATION API")
                     result.data?.let { locationData ->
-
                         _uiState.update { currentState ->
                             currentState.copy(
                                 locationData = locationData
@@ -150,21 +140,13 @@ class MainViewModel(
             locationKey = _uiState.value.locationData?.Key ?: "",
             apikey = _uiState.value.apiKey
         ).collectLatest { result ->
-            Log.d(
-                TAG,
-                " used location key in getCurrentData = " + (_uiState.value.locationData?.Key ?: "")
-            )
-
             when (result) {
                 is Result.Error -> {
-                    Log.d(TAG, "ERROR IN Current API")
+                    result.message?.let { showToast(it) }
 
-                    _showToastErrorChannel.send(true)
                 }
 
                 is Result.Success -> {
-                    Log.d(TAG, "NOERROR IN Current API")
-
                     result.data?.let { CurrentConditions ->
                         _uiState.update { currentState ->
                             currentState.copy(
@@ -184,16 +166,12 @@ class MainViewModel(
         ).collectLatest { result ->
             when (result) {
                 is Result.Error -> {
-                    Log.d(TAG, "ERROR IN hourly API")
+                    result.message?.let { showToast(it) }
 
-                    _showToastErrorChannel.send(true)
                 }
 
                 is Result.Success -> {
-                    Log.d(TAG, "NOERROR IN hourly API")
-
                     result.data?.let { hourlyData ->
-                        Log.d(TAG, hourlyData.toString())
                         _uiState.update { currentState ->
                             currentState.copy(
                                 hourlyData = hourlyData
@@ -212,17 +190,12 @@ class MainViewModel(
         ).collectLatest { result ->
             when (result) {
                 is Result.Error -> {
-                    Log.d(TAG, "ERROR IN daily API")
+                    result.message?.let { showToast(it) }
 
-                    _showToastErrorChannel.send(true)
                 }
 
                 is Result.Success -> {
-                    Log.d(TAG, "NOERROR IN daily API")
-
                     result.data?.let { dailyForecast ->
-                        Log.d(TAG, dailyForecast.toString())
-
                         _uiState.update { currentState ->
                             currentState.copy(
                                 dailyData = dailyForecast
@@ -231,8 +204,8 @@ class MainViewModel(
                     }
                 }
             }
+            isLoading(false)
         }
-        isLoading(false)
     }
 
 
@@ -243,17 +216,11 @@ class MainViewModel(
         ).collectLatest { result ->
             when (result) {
                 is Result.Error -> {
-                    Log.d(TAG, "ERROR IN search API")
-
-                    _showToastErrorChannel.send(true)
+                    result.message?.let { showToast(it) }
                 }
 
                 is Result.Success -> {
-                    Log.d(TAG, "NOERROR IN search API")
-
                     result.data?.let { searchResult ->
-                        Log.d(TAG, searchResult.toString())
-
                         _uiState.update { currentState ->
                             currentState.copy(
                                 searchResult = searchResult

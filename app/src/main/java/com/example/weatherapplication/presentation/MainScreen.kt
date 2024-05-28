@@ -1,6 +1,5 @@
 package com.example.weatherapplication.presentation
 
-import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
@@ -25,10 +24,14 @@ import androidx.compose.foundation.shape.AbsoluteRoundedCornerShape
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.ExperimentalMaterialApi
+import androidx.compose.material.ModalBottomSheetLayout
+import androidx.compose.material.ModalBottomSheetValue
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Place
 import androidx.compose.material.icons.rounded.Person
+import androidx.compose.material.rememberModalBottomSheetState
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
@@ -51,7 +54,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -73,14 +76,14 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.example.weatherapplication.R
 import com.example.weatherapplication.Screen
-import com.example.weatherapplication.TAG
+import com.example.weatherapplication.data.model.CurrentConditionsResponse.CurrentConditions
+import com.example.weatherapplication.data.model.LocationDataResponse.LocationData
 import com.example.weatherapplication.fontFamily
 import com.example.weatherapplication.ui.theme.Purple80
 import com.example.weatherapplication.ui.theme.backgroundColor
 import com.example.weatherapplication.ui.theme.border_color
 import com.example.weatherapplication.ui.theme.textColor
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.time.LocalDateTime
@@ -90,7 +93,6 @@ import java.util.Date
 import java.util.Locale
 
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun WeatherApp(
     mainViewModel: MainViewModel = viewModel(),
@@ -98,33 +100,32 @@ fun WeatherApp(
     navController: NavController,
 ) {
 
+    val coroutineScope = rememberCoroutineScope()
+    val context = LocalContext.current
 
     fun getCurrentTime(): String {
         val dateFormat = SimpleDateFormat("MMM d, yyyy    HH:mm", Locale.getDefault())
         return dateFormat.format(Date())
     }
 
-    var currentTime by remember { mutableStateOf(getCurrentTime()) }
+    val currentTime = remember { mutableStateOf(getCurrentTime()) }
+    LaunchedEffect(Unit) {
+        while (true) {
+            currentTime.value = getCurrentTime()
+            delay(60000)
+        }
+    }
 
 
-    val context = LocalContext.current
-    val coroutineScope = rememberCoroutineScope()
-
+    val currentContext by rememberUpdatedState(newValue = context)
     LaunchedEffect(Unit) {
         coroutineScope.launch {
             favoritesViewModel.toastMessage.asFlow().collect { message ->
                 message?.let {
-                    Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
+                    Toast.makeText(currentContext, it, Toast.LENGTH_SHORT).show()
                     favoritesViewModel.clearToastMessage()
                 }
             }
-        }
-    }
-
-    LaunchedEffect(Unit) {
-        while (true) {
-            currentTime = getCurrentTime()
-            delay(60000) // Update every minute
         }
     }
 
@@ -133,25 +134,24 @@ fun WeatherApp(
     ) {
 
         val mainUiState = mainViewModel.uiState.collectAsState().value
-        val locationData = mainUiState.locationData
-        val currentConditions = mainUiState.currentData
 
-        val favUiState = favoritesViewModel.uiState.collectAsState().value
-        val isSheetOpen = favUiState.isSheetOpen
 
-        val context = LocalContext.current
+        LaunchedEffect(Unit) {
+            coroutineScope.launch {
+                mainViewModel.toastMessage.asFlow().collect { message ->
+                    message?.let {
+                        Toast.makeText(currentContext, it, Toast.LENGTH_LONG).show()
+                        mainViewModel.clearToastMessage()
+                    }
 
-        LaunchedEffect(key1 = mainViewModel.showToastErrorChannel) {
-            mainViewModel.showToastErrorChannel.collectLatest { show ->
-                if (show) Toast.makeText(context, "ERROR", Toast.LENGTH_SHORT).show()
+                }
+
             }
+
 
         }
 
-        Log.d(TAG, locationData.toString())
-        Log.d(TAG, currentConditions.toString())
 
-        Log.d(TAG, "in main screen is loading=" + mainUiState.isLoading)
 
         if (mainUiState.isLoading) {
             Box(
@@ -160,180 +160,216 @@ fun WeatherApp(
                 CircularProgressIndicator()
             }
         } else {
-            val cityName =
-                remember {
-                    mutableStateOf(
-                        (locationData?.LocalizedName
-                            ?: " ") + ",\n\n" + (locationData?.AdministrativeArea?.LocalizedName) + "\u25bd"
-                    )
-                }
+            WeatherScreen(
+                navController = navController,
+                currentTime = currentTime.value,
+                mainViewModel = mainViewModel,
+                favoritesViewModel = favoritesViewModel
+            )
 
-            val bgImage = painterResource(id = R.drawable.bg_image)
+        }
 
-            Scaffold(topBar = {
-                TopAppBar(
-                    title = {
-                        Box(
-                            modifier = Modifier.fillMaxWidth(),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(
-                                text = currentTime,
-                                fontSize = 20.sp,
-                                color = Color.White,
-                                textAlign = TextAlign.Start,
-                                fontStyle = FontStyle.Italic,
-                                fontFamily = fontFamily,
-                                fontWeight = FontWeight.W400,
-                                modifier = Modifier.padding(start = 8.dp)
-                            )
-                        }
 
-                    },
-                    navigationIcon = {
-                        IconButton(onClick = { favoritesViewModel.enableScreen() }) {
-                            Icon(
-                                imageVector = Icons.Default.Place,
-                                contentDescription = "",
-                                Modifier.size(32.dp),
-                                tint = Purple80
-                            )
-                        }
-                    },
-                    actions = {
-                        IconButton(onClick = {navController.navigate(Screen.LoginScreen.route)}) {
-                            Icon(
-                                imageVector = Icons.Rounded.Person,
-                                contentDescription = "log in icon",
-                                Modifier.size(32.dp),
-                                tint = Color.White
-                            )
-                        }
-                    },
-                    colors = TopAppBarDefaults.topAppBarColors(
-                        containerColor = Color.Transparent
-                    ),
-                    modifier = Modifier
-                        .background(Color(0xFF265380))
-                        .padding(8.dp)
-                        .clip(RoundedCornerShape(20.dp))
-                        .background(Color(0xFF1F4179))
+    }
 
-                )
-            }, floatingActionButton = {
-                FloatingActionButton(
-                    onClick = {
-                        val cityname = (locationData?.LocalizedName
-                            ?: " ") + ", " + (locationData?.AdministrativeArea?.LocalizedName)
-                        favoritesViewModel.addFavCity(
-                            cityName = cityname,
-                            latitude = mainUiState.locationData?.GeoPosition?.Latitude.toString(),
-                            longitude = mainUiState.locationData?.GeoPosition?.Longitude.toString()
-                        )
-                    },
-                    shape = CircleShape,
-                    modifier = Modifier.size(80.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Add,
-                        contentDescription = "Add favourite City"
-                    )
-                }
-            }
-            ) { values ->
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(values)
-                ) {
-                    Image(
-                        painter = bgImage,
-                        contentDescription = "background image",
-                        contentScale = ContentScale.FillBounds,
-                        modifier = Modifier.fillMaxSize()
-                    )
-                    val scrollState = rememberScrollState()
-                    Column(
-                        modifier = Modifier
-                            .verticalScroll(scrollState)
-                            .fillMaxSize()
-                            .background(backgroundColor.copy(alpha = 0.1f))
-                            .padding(top = 16.dp, start = 4.dp, end = 4.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
+}
+
+
+@OptIn(
+    ExperimentalMaterialApi::class,
+    ExperimentalMaterial3Api::class,
+    ExperimentalFoundationApi::class
+)
+@Composable
+fun WeatherScreen(
+    mainViewModel: MainViewModel = viewModel(),
+    favoritesViewModel: FavoritesViewModel = viewModel(),
+    navController: NavController,
+    currentTime: String
+) {
+
+    val coroutineScope = rememberCoroutineScope()
+
+    val mainUiState = mainViewModel.uiState.collectAsState().value
+    val locationData = mainUiState.locationData
+    val currentConditions = mainUiState.currentData
+
+    val sheetState = rememberModalBottomSheetState(initialValue = ModalBottomSheetValue.Hidden)
+
+    ModalBottomSheetLayout(
+        sheetState = sheetState,
+        sheetContent = {
+            FavoritesScreen(
+                mainViewModel = mainViewModel,
+                onClose = { coroutineScope.launch { sheetState.hide() } }
+            )
+        }
+    ) {
+
+        val bgImage = painterResource(id = R.drawable.bg_image)
+
+        Scaffold(topBar = {
+            TopAppBar(
+                title = {
+                    Box(
+                        modifier = Modifier.fillMaxWidth(),
+                        contentAlignment = Alignment.Center
                     ) {
+                        Text(
+                            text = currentTime,
+                            fontSize = 20.sp,
+                            color = Color.White,
+                            textAlign = TextAlign.Start,
+                            fontStyle = FontStyle.Italic,
+                            fontFamily = fontFamily,
+                            fontWeight = FontWeight.W400,
+                            modifier = Modifier.padding(start = 8.dp)
+                        )
+                    }
+
+                },
+                navigationIcon = {
+                    IconButton(onClick = { coroutineScope.launch { sheetState.show() } }) {
+                        Icon(
+                            imageVector = Icons.Default.Place,
+                            contentDescription = "",
+                            Modifier.size(32.dp),
+                            tint = Purple80
+                        )
+                    }
+                },
+                actions = {
+                    IconButton(onClick = { navController.navigate(Screen.LoginScreen.route) }) {
+                        Icon(
+                            imageVector = Icons.Rounded.Person,
+                            contentDescription = "log in icon",
+                            Modifier.size(32.dp),
+                            tint = Color.White
+                        )
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = Color.Transparent
+                ),
+                modifier = Modifier
+                    .background(Color(0xFF265380))
+                    .padding(8.dp)
+                    .clip(RoundedCornerShape(20.dp))
+                    .background(Color(0xFF1F4179))
+
+            )
+        }, floatingActionButton = {
+            FloatingActionButton(
+                onClick = {
+                    val cityname = (locationData?.LocalizedName
+                            ) + ", " + (locationData?.AdministrativeArea?.LocalizedName)
+                    favoritesViewModel.addFavCity(
+                        cityName = cityname,
+                        latitude = mainUiState.locationData?.GeoPosition?.Latitude.toString(),
+                        longitude = mainUiState.locationData?.GeoPosition?.Longitude.toString()
+                    )
+                },
+                shape = CircleShape,
+                modifier = Modifier.size(80.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Add,
+                    contentDescription = "Add favourite City"
+                )
+            }
+        }
+        ) { values ->
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(values)
+            ) {
+                Image(
+                    painter = bgImage,
+                    contentDescription = "background image",
+                    contentScale = ContentScale.FillBounds,
+                    modifier = Modifier.fillMaxSize()
+                )
+                val scrollState = rememberScrollState()
+                Column(
+                    modifier = Modifier
+                        .verticalScroll(scrollState)
+                        .fillMaxSize()
+                        .background(backgroundColor.copy(alpha = 0.1f))
+                        .padding(top = 16.dp, start = 4.dp, end = 4.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
 
 
-                        CurrentWeather(mainViewModel, cityName = cityName.value, navController)
+                    CurrentWeather(
+                        navController = navController,
+                        locationData = locationData,
+                        currentConditions = currentConditions
+                    )
 
 
-                        val pagerState = rememberPagerState(pageCount = { 2 })
-                        val coroutineScope = rememberCoroutineScope()
-                        TabRow(selectedTabIndex = pagerState.currentPage,
-                            containerColor = backgroundColor.copy(alpha = 0.5f),
-                            contentColor = Color.White,
-                            modifier = Modifier.padding(top = 16.dp),
-                            indicator = { tabPositions ->
-                                TabRowDefaults.Indicator(
-                                    modifier = Modifier.tabIndicatorOffset(tabPositions[pagerState.currentPage]),
-                                    height = 4.dp,
-                                    color = Color(0xFF87CEEB)
-                                )
-                            }) {
-                            Tab(selected = pagerState.currentPage == 0, onClick = {
-                                coroutineScope.launch {
-                                    pagerState.animateScrollToPage(0)
-                                }
-                            }, text = {
-                                Text(text = "Today")
-                            })
-                            Tab(selected = pagerState.currentPage == 1, onClick = {
-                                coroutineScope.launch {
-                                    pagerState.animateScrollToPage(1)
-                                }
-                            }, text = {
-                                Text(text = "5 Day Weather Forecast")
-                            })
-
-                        }
-                        HorizontalPager(
-                            state = pagerState, userScrollEnabled = false
-                        ) { page ->
-                            if (page == 0) {
-                                HourlyWeatherData(
-                                    scrollState = rememberScrollState(),
-                                    mainViewModel = mainViewModel
-                                )
-                            } else {
-                                DailyWeatherData(mainViewModel)
+                    val pagerState = rememberPagerState(pageCount = { 2 })
+                    TabRow(selectedTabIndex = pagerState.currentPage,
+                        containerColor = backgroundColor.copy(alpha = 0.5f),
+                        contentColor = Color.White,
+                        modifier = Modifier.padding(top = 16.dp),
+                        indicator = { tabPositions ->
+                            TabRowDefaults.Indicator(
+                                modifier = Modifier.tabIndicatorOffset(tabPositions[pagerState.currentPage]),
+                                height = 4.dp,
+                                color = Color(0xFF87CEEB)
+                            )
+                        }) {
+                        Tab(selected = pagerState.currentPage == 0, onClick = {
+                            coroutineScope.launch {
+                                pagerState.animateScrollToPage(0)
                             }
+                        }, text = {
+                            Text(text = "Today")
+                        })
+                        Tab(selected = pagerState.currentPage == 1, onClick = {
+                            coroutineScope.launch {
+                                pagerState.animateScrollToPage(1)
+                            }
+                        }, text = {
+                            Text(text = "5 Day Weather Forecast")
+                        })
 
-                        }
-                        if (isSheetOpen == true) {
-                            FavoritesScreen(
-                                navController = navController,
+                    }
+                    HorizontalPager(
+                        state = pagerState, userScrollEnabled = false
+                    ) { page ->
+                        if (page == 0) {
+                            HourlyWeatherData(
+                                scrollState = rememberScrollState(),
                                 mainViewModel = mainViewModel
                             )
+                        } else {
+                            DailyWeatherData(mainViewModel)
                         }
 
                     }
                 }
             }
-
         }
-
     }
+
 }
 
 
 @Composable
 fun CurrentWeather(
-    mainViewModel: MainViewModel = viewModel(),
-    cityName: String,
-    navController: NavController
+    navController: NavController,
+    locationData: LocationData?,
+    currentConditions: CurrentConditions?
 ) {
-    val mainUiState = mainViewModel.uiState.collectAsState().value
 
-    val currentConditions = mainUiState.currentData
+    val cityName =
+        remember {
+            mutableStateOf(
+                (locationData?.LocalizedName) + ",\n\n" + (locationData?.AdministrativeArea?.LocalizedName) + "\u25bd"
+            )
+        }
 
     val degree =
         remember { mutableStateOf(currentConditions?.get(0)?.Temperature?.Metric?.Value.toString() + "\u00b0C") }
@@ -341,33 +377,32 @@ fun CurrentWeather(
         remember { mutableStateOf(currentConditions?.get(0)?.TemperatureSummary?.Past24HourRange?.Minimum?.Metric?.Value.toString() + "\u00b0C") }
     val maxDegree =
         remember { mutableStateOf(currentConditions?.get(0)?.TemperatureSummary?.Past24HourRange?.Maximum?.Metric?.Value.toString() + "\u00b0C") }
-    val weatherText = remember { mutableStateOf(currentConditions?.get(0)?.WeatherText ?: " ") }
+    val weatherText = remember { mutableStateOf(currentConditions?.get(0)?.WeatherText ?: "") }
 
     val realFeelTemperature = remember {
         mutableStateOf(currentConditions?.get(0)?.RealFeelTemperature?.Metric?.Value.toString() + "\u00b0C")
     }
     val pressure = remember {
         mutableStateOf(
-            (currentConditions?.get(0)?.Pressure?.Metric?.Value
-                ?: 0).toString() + " " + (currentConditions?.get(0)?.Pressure?.Metric?.Unit
-                ?: "mb")
+            (currentConditions?.get(0)?.Pressure?.Metric?.Value).toString() + " " + (currentConditions?.get(
+                0
+            )?.Pressure?.Metric?.Unit
+                    )
         )
     }
     val wind = remember {
         mutableStateOf(
             (currentConditions?.get(0)?.Wind?.Speed?.Metric?.Value
-                ?: 0).toString() + " " + (currentConditions?.get(0)?.Wind?.Speed?.Metric?.Unit
-                ?: "km/h")
+                    ).toString() + " " + (currentConditions?.get(0)?.Wind?.Speed?.Metric?.Unit
+                    )
         )
     }
 
     val result by remember {
         mutableIntStateOf(
-            currentConditions?.get(0)?.WeatherIcon
-                ?: 0
+            currentConditions?.get(0)?.WeatherIcon ?: 0
         )
     }
-    Log.d(TAG, result.toString())
 
     val iconResource = when (result) {
         1, 33 -> R.drawable.sunny
@@ -388,7 +423,7 @@ fun CurrentWeather(
 
     }
 
-    Text(text = cityName,
+    Text(text = cityName.value,
         color = Color.White,
         textAlign = TextAlign.Center,
         fontSize = 36.sp,
@@ -577,13 +612,14 @@ fun CurrentWeather(
                 )
             }
         }
-
     }
+
 }
 
 
 @Composable
 fun HourlyWeatherData(mainViewModel: MainViewModel = viewModel(), scrollState: ScrollState) {
+
     val mainUiState = mainViewModel.uiState.collectAsState().value
     val hourlyData = mainUiState.hourlyData
     Column(
@@ -712,6 +748,7 @@ fun HourlyWeatherData(mainViewModel: MainViewModel = viewModel(), scrollState: S
 
 @Composable
 fun DailyWeatherData(mainViewModel: MainViewModel = viewModel()) {
+
     val mainUiState = mainViewModel.uiState.collectAsState().value
     val dailyForecast = mainUiState.dailyData
     Column(
@@ -734,7 +771,7 @@ fun DailyWeatherData(mainViewModel: MainViewModel = viewModel()) {
             val day by remember {
                 mutableStateOf(
                     LocalDateTime.ofEpochSecond(
-                        dailyForecast!!.DailyForecasts[i].EpochDate.toLong(),
+                        dailyForecast?.DailyForecasts?.get(i)?.EpochDate?.toLong() ?: 0,
                         1,
                         zoneOffset
                     ).dayOfWeek

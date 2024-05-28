@@ -5,14 +5,12 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.weatherapplication.MainApplication
-import com.example.weatherapplication.data.db.FavoriteCitiesDatabase
 import com.example.weatherapplication.data.db.FavoriteCity
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
-import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 class FavoritesViewModel(
@@ -29,8 +27,8 @@ class FavoritesViewModel(
     private val _showToastErrorChannel = Channel<Boolean>()
     val showToastErrorChannel = _showToastErrorChannel.receiveAsFlow()
 
-    private val _toastMessage = MutableLiveData<String>()
-    val toastMessage: LiveData<String> get() = _toastMessage
+    private val _toastMessage = MutableLiveData<String?>()
+    val toastMessage: MutableLiveData<String?> get() = _toastMessage
 
     init {
         viewModelScope.launch {
@@ -48,7 +46,6 @@ class FavoritesViewModel(
             showToast("Added Successfully")
         } else {
             viewModelScope.launch {
-                _showToastErrorChannel.send(true)
                 showToast("Cannot add more than 10 cities")
             }
 
@@ -62,23 +59,8 @@ class FavoritesViewModel(
         }
     }
 
-    fun disableScreen() {
-        _uiState.update { current ->
-            current.copy(
-                isSheetOpen = false
-            )
-        }
-    }
 
-    fun enableScreen() {
-        _uiState.update { current ->
-            current.copy(
-                isSheetOpen = true
-            )
-        }
-    }
-
-    fun showToast(message: String) {
+    private fun showToast(message: String) {
         _toastMessage.value = message
     }
     fun clearToastMessage() {

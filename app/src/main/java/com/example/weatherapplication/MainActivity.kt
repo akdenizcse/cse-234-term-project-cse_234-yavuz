@@ -3,26 +3,17 @@ package com.example.weatherapplication
 import android.annotation.SuppressLint
 import android.location.Location
 import android.os.Bundle
-import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Text
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.compose.NavHost
@@ -82,12 +73,9 @@ class MainActivity : ComponentActivity() {
                 }).addOnSuccessListener { location: Location? ->
                 if (location == null) {
                     Toast.makeText(this, "Cannot Get Location", Toast.LENGTH_SHORT).show()
-                    Log.d(TAG, "KONUM ALINAMADI")
                 } else {
                     latitude = location.latitude.toString()
-                    Log.d(TAG, "LATITUDE == $latitude")
                     longitude = location.longitude.toString()
-                    Log.d(TAG, "longitude == $longitude")
 
                 }
             }
@@ -122,7 +110,7 @@ class MainActivity : ComponentActivity() {
                     composable(
                         route = Screen.FavoritesScreen.route,
                     ) {
-                        FavoritesScreen(mainViewModel = viewModel, navController = navController)
+                        FavoritesScreen(mainViewModel = viewModel, onClose = { })
                     }
                     composable(
                         route = Screen.SearchScreen.route
@@ -132,10 +120,15 @@ class MainActivity : ComponentActivity() {
                     composable(
                         route = Screen.LoginScreen.route
                     ) {
-                            LoginScreen(navController= navController, onLoginClicked = {enteredUserName ->
+                        LoginScreen(
+                            navController = navController,
+                            onLoginClicked = { enteredUserName ->
                                 username = enteredUserName
                                 isLoggedIn = true
-                            }, isLoggedIn = isLoggedIn, userName = username)
+                            },
+                            isLoggedIn = isLoggedIn,
+                            userName = username
+                        )
 
                     }
                 }

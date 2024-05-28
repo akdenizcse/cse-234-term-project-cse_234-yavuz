@@ -11,9 +11,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.filled.AccountCircle
@@ -25,7 +23,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -62,69 +59,91 @@ fun LoginScreen(
     val context = LocalContext.current
 
     if (!isLoggedIn) {
-        val imeState = rememberImeState()
+        /*val imeState = rememberImeState()
         val scrollState = rememberScrollState()
 
         LaunchedEffect(key1 = imeState.value) {
-            if(imeState.value){
+            if (imeState.value) {
                 scrollState.scrollTo(scrollState.maxValue)
             }
 
-        }
+        }*/
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .verticalScroll(scrollState)
-                .padding(horizontal = 16.dp),
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Icon(
-                imageVector = Icons.Default.AccountCircle, contentDescription = null,
-                modifier = Modifier.size(150.dp),
-                tint = Color(0xFF1E489C)
-            )
-            Spacer(modifier = Modifier.size(25.dp))
-            TextField(
-                value = username,
-                onValueChange = { username = it },
-                label = { Text("Username") },
-                singleLine = true,
-                keyboardOptions = KeyboardOptions.Default.copy(
-                    imeAction = ImeAction.Next
-                ),
-                modifier = Modifier.fillMaxWidth(),
-            )
-            Spacer(modifier = Modifier.height(16.dp))
-            TextField(
-                value = password,
-                onValueChange = { password = it },
-                label = { Text("Password") },
-                singleLine = true,
-                keyboardOptions = KeyboardOptions.Default.copy(
-                    imeAction = ImeAction.Done
-                ),
-                modifier = Modifier.fillMaxWidth(),
-                visualTransformation = PasswordVisualTransformation()
-            )
-            Spacer(modifier = Modifier.padding(16.dp))
-            Button(
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFF1E489C),
-                    contentColor = Color.White
-                ),
-                onClick = {
-                    if (username == "fakeuser" && password == "fakepassword") {
-                        onLoginClicked(username)
+                .padding(top=16.dp),
 
-                    } else {
-                        Toast.makeText(context, "Invalid Username or Password", Toast.LENGTH_SHORT)
-                            .show()
-                    }
-                },
-                modifier = Modifier.fillMaxWidth()
+        ) {
+            Row(modifier = Modifier.fillMaxWidth()) {
+                IconButton(onClick = { navController.navigate(Screen.MainScreen.route) }) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
+                        contentDescription = "",
+                        Modifier.size(50.dp),
+                        tint = Color.Black
+                    )
+                }
+
+            }
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 16.dp),
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Text("Login")
+                Icon(
+                    imageVector = Icons.Default.AccountCircle, contentDescription = null,
+                    modifier = Modifier.size(150.dp),
+                    tint = Color(0xFF1E489C)
+                )
+
+                Spacer(modifier = Modifier.size(25.dp))
+                TextField(
+                    value = username,
+                    onValueChange = { username = it },
+                    label = { Text("Username") },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions.Default.copy(
+                        imeAction = ImeAction.Next
+                    ),
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+                TextField(
+                    value = password,
+                    onValueChange = { password = it },
+                    label = { Text("Password") },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions.Default.copy(
+                        imeAction = ImeAction.Done
+                    ),
+                    modifier = Modifier.fillMaxWidth(),
+                    visualTransformation = PasswordVisualTransformation()
+                )
+                Spacer(modifier = Modifier.padding(16.dp))
+                Button(
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFF1E489C),
+                        contentColor = Color.White
+                    ),
+                    onClick = {
+                        if (username == "fakeuser" && password == "fakepassword") {
+                            onLoginClicked(username)
+
+                        } else {
+                            Toast.makeText(
+                                context,
+                                "Invalid Username or Password",
+                                Toast.LENGTH_SHORT
+                            )
+                                .show()
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Login")
+                }
             }
         }
     } else {
@@ -152,8 +171,8 @@ fun LoginScreen(
     }
 
 
-
 }
+
 @Composable
 fun rememberImeState(): State<Boolean> {
 
