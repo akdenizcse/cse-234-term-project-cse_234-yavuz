@@ -128,48 +128,28 @@ fun WeatherApp(
             }
         }
     }
-
-    Surface(
-        modifier = Modifier.fillMaxSize()
-    ) {
-
-        val mainUiState = mainViewModel.uiState.collectAsState().value
-
-
-        LaunchedEffect(Unit) {
-            coroutineScope.launch {
-                mainViewModel.toastMessage.asFlow().collect { message ->
-                    message?.let {
-                        Toast.makeText(currentContext, it, Toast.LENGTH_LONG).show()
-                        mainViewModel.clearToastMessage()
-                    }
-
+    LaunchedEffect(Unit) {
+        coroutineScope.launch {
+            mainViewModel.toastMessage.asFlow().collect { message ->
+                message?.let {
+                    Toast.makeText(currentContext, it, Toast.LENGTH_LONG).show()
+                    mainViewModel.clearToastMessage()
                 }
 
             }
 
-
         }
+    }
 
-
-
-        if (mainUiState.isLoading) {
-            Box(
-                modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center
-            ) {
-                CircularProgressIndicator()
-            }
-        } else {
-            WeatherScreen(
-                navController = navController,
-                currentTime = currentTime.value,
-                mainViewModel = mainViewModel,
-                favoritesViewModel = favoritesViewModel
-            )
-
-        }
-
-
+    Surface(
+        modifier = Modifier.fillMaxSize()
+    ) {
+        WeatherScreen(
+            navController = navController,
+            currentTime = currentTime.value,
+            mainViewModel = mainViewModel,
+            favoritesViewModel = favoritesViewModel
+        )
     }
 
 }
@@ -188,172 +168,182 @@ fun WeatherScreen(
     currentTime: String
 ) {
 
-    val coroutineScope = rememberCoroutineScope()
-
     val mainUiState = mainViewModel.uiState.collectAsState().value
-    val locationData = mainUiState.locationData
-    val currentConditions = mainUiState.currentData
 
-    val sheetState = rememberModalBottomSheetState(initialValue = ModalBottomSheetValue.Hidden)
-
-    ModalBottomSheetLayout(
-        sheetState = sheetState,
-        sheetContent = {
-            FavoritesScreen(
-                mainViewModel = mainViewModel,
-                onClose = { coroutineScope.launch { sheetState.hide() } }
-            )
+    if (mainUiState.isLoading) {
+        Box(
+            modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center
+        ) {
+            CircularProgressIndicator()
         }
-    ) {
+    } else {
+        val coroutineScope = rememberCoroutineScope()
 
-        val bgImage = painterResource(id = R.drawable.bg_image)
+        val locationData = mainUiState.locationData
+        val currentConditions = mainUiState.currentData
 
-        Scaffold(topBar = {
-            TopAppBar(
-                title = {
-                    Box(
-                        modifier = Modifier.fillMaxWidth(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = currentTime,
-                            fontSize = 20.sp,
-                            color = Color.White,
-                            textAlign = TextAlign.Start,
-                            fontStyle = FontStyle.Italic,
-                            fontFamily = fontFamily,
-                            fontWeight = FontWeight.W400,
-                            modifier = Modifier.padding(start = 8.dp)
-                        )
-                    }
+        val sheetState = rememberModalBottomSheetState(initialValue = ModalBottomSheetValue.Hidden)
 
-                },
-                navigationIcon = {
-                    IconButton(onClick = { coroutineScope.launch { sheetState.show() } }) {
-                        Icon(
-                            imageVector = Icons.Default.Place,
-                            contentDescription = "",
-                            Modifier.size(32.dp),
-                            tint = Purple80
-                        )
-                    }
-                },
-                actions = {
-                    IconButton(onClick = { navController.navigate(Screen.LoginScreen.route) }) {
-                        Icon(
-                            imageVector = Icons.Rounded.Person,
-                            contentDescription = "log in icon",
-                            Modifier.size(32.dp),
-                            tint = Color.White
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color.Transparent
-                ),
-                modifier = Modifier
-                    .background(Color(0xFF265380))
-                    .padding(8.dp)
-                    .clip(RoundedCornerShape(20.dp))
-                    .background(Color(0xFF1F4179))
 
-            )
-        }, floatingActionButton = {
-            FloatingActionButton(
-                onClick = {
-                    val cityname = (locationData?.LocalizedName
-                            ) + ", " + (locationData?.AdministrativeArea?.LocalizedName)
-                    favoritesViewModel.addFavCity(
-                        cityName = cityname,
-                        latitude = mainUiState.locationData?.GeoPosition?.Latitude.toString(),
-                        longitude = mainUiState.locationData?.GeoPosition?.Longitude.toString()
-                    )
-                },
-                shape = CircleShape,
-                modifier = Modifier.size(80.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Add,
-                    contentDescription = "Add favourite City"
+        ModalBottomSheetLayout(
+            sheetState = sheetState,
+            sheetContent = {
+                FavoritesScreen(
+                    mainViewModel = mainViewModel,
+                    onClose = { coroutineScope.launch { sheetState.hide() } },
+                    navController = navController
                 )
             }
-        }
-        ) { values ->
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(values)
-            ) {
-                Image(
-                    painter = bgImage,
-                    contentDescription = "background image",
-                    contentScale = ContentScale.FillBounds,
-                    modifier = Modifier.fillMaxSize()
-                )
-                val scrollState = rememberScrollState()
-                Column(
-                    modifier = Modifier
-                        .verticalScroll(scrollState)
-                        .fillMaxSize()
-                        .background(backgroundColor.copy(alpha = 0.1f))
-                        .padding(top = 16.dp, start = 4.dp, end = 4.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
+        ) {
 
+            val bgImage = painterResource(id = R.drawable.bg_image)
 
-                    CurrentWeather(
-                        navController = navController,
-                        locationData = locationData,
-                        currentConditions = currentConditions
-                    )
-
-
-                    val pagerState = rememberPagerState(pageCount = { 2 })
-                    TabRow(selectedTabIndex = pagerState.currentPage,
-                        containerColor = backgroundColor.copy(alpha = 0.5f),
-                        contentColor = Color.White,
-                        modifier = Modifier.padding(top = 16.dp),
-                        indicator = { tabPositions ->
-                            TabRowDefaults.Indicator(
-                                modifier = Modifier.tabIndicatorOffset(tabPositions[pagerState.currentPage]),
-                                height = 4.dp,
-                                color = Color(0xFF87CEEB)
+            Scaffold(topBar = {
+                TopAppBar(
+                    title = {
+                        Box(
+                            modifier = Modifier.fillMaxWidth(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = currentTime,
+                                fontSize = 20.sp,
+                                color = Color.White,
+                                textAlign = TextAlign.Start,
+                                fontStyle = FontStyle.Italic,
+                                fontFamily = fontFamily,
+                                fontWeight = FontWeight.W400,
+                                modifier = Modifier.padding(start = 8.dp)
                             )
-                        }) {
-                        Tab(selected = pagerState.currentPage == 0, onClick = {
-                            coroutineScope.launch {
-                                pagerState.animateScrollToPage(0)
-                            }
-                        }, text = {
-                            Text(text = "Today")
-                        })
-                        Tab(selected = pagerState.currentPage == 1, onClick = {
-                            coroutineScope.launch {
-                                pagerState.animateScrollToPage(1)
-                            }
-                        }, text = {
-                            Text(text = "5 Day Weather Forecast")
-                        })
-
-                    }
-                    HorizontalPager(
-                        state = pagerState, userScrollEnabled = false
-                    ) { page ->
-                        if (page == 0) {
-                            HourlyWeatherData(
-                                scrollState = rememberScrollState(),
-                                mainViewModel = mainViewModel
-                            )
-                        } else {
-                            DailyWeatherData(mainViewModel)
                         }
 
+                    },
+                    navigationIcon = {
+                        IconButton(onClick = { coroutineScope.launch { sheetState.show() } }) {
+                            Icon(
+                                imageVector = Icons.Default.Place,
+                                contentDescription = "",
+                                Modifier.size(32.dp),
+                                tint = Purple80
+                            )
+                        }
+                    },
+                    actions = {
+                        IconButton(onClick = { navController.navigate(Screen.LoginScreen.route) }) {
+                            Icon(
+                                imageVector = Icons.Rounded.Person,
+                                contentDescription = "log in icon",
+                                Modifier.size(32.dp),
+                                tint = Color.White
+                            )
+                        }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = Color.Transparent
+                    ),
+                    modifier = Modifier
+                        .background(Color(0xFF265380))
+                        .padding(8.dp)
+                        .clip(RoundedCornerShape(20.dp))
+                        .background(Color(0xFF1F4179))
+
+                )
+            }, floatingActionButton = {
+                FloatingActionButton(
+                    onClick = {
+                        val cityname = (locationData?.LocalizedName
+                                ) + ", " + (locationData?.AdministrativeArea?.LocalizedName)
+                        favoritesViewModel.addFavCity(
+                            cityName = cityname,
+                            latitude = mainUiState.locationData?.GeoPosition?.Latitude.toString(),
+                            longitude = mainUiState.locationData?.GeoPosition?.Longitude.toString()
+                        )
+                    },
+                    shape = CircleShape,
+                    modifier = Modifier.size(80.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Add,
+                        contentDescription = "Add favourite City"
+                    )
+                }
+            }
+            ) { values ->
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(values)
+                ) {
+                    Image(
+                        painter = bgImage,
+                        contentDescription = "background image",
+                        contentScale = ContentScale.FillBounds,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                    val scrollState = rememberScrollState()
+                    Column(
+                        modifier = Modifier
+                            .verticalScroll(scrollState)
+                            .fillMaxSize()
+                            .background(backgroundColor.copy(alpha = 0.1f))
+                            .padding(top = 16.dp, start = 4.dp, end = 4.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+
+
+                        CurrentWeather(
+                            navController = navController,
+                            locationData = locationData,
+                            currentConditions = currentConditions
+                        )
+
+
+                        val pagerState = rememberPagerState(pageCount = { 2 })
+                        TabRow(selectedTabIndex = pagerState.currentPage,
+                            containerColor = backgroundColor.copy(alpha = 0.5f),
+                            contentColor = Color.White,
+                            modifier = Modifier.padding(top = 16.dp),
+                            indicator = { tabPositions ->
+                                TabRowDefaults.Indicator(
+                                    modifier = Modifier.tabIndicatorOffset(tabPositions[pagerState.currentPage]),
+                                    height = 4.dp,
+                                    color = Color(0xFF87CEEB)
+                                )
+                            }) {
+                            Tab(selected = pagerState.currentPage == 0, onClick = {
+                                coroutineScope.launch {
+                                    pagerState.animateScrollToPage(0)
+                                }
+                            }, text = {
+                                Text(text = "Today")
+                            })
+                            Tab(selected = pagerState.currentPage == 1, onClick = {
+                                coroutineScope.launch {
+                                    pagerState.animateScrollToPage(1)
+                                }
+                            }, text = {
+                                Text(text = "5 Day Weather Forecast")
+                            })
+
+                        }
+                        HorizontalPager(
+                            state = pagerState, userScrollEnabled = false
+                        ) { page ->
+                            if (page == 0) {
+                                HourlyWeatherData(
+                                    scrollState = rememberScrollState(),
+                                    mainViewModel = mainViewModel
+                                )
+                            } else {
+                                DailyWeatherData(mainViewModel)
+                            }
+
+                        }
                     }
                 }
             }
         }
     }
-
 }
 
 

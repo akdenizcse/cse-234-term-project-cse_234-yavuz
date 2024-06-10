@@ -54,7 +54,7 @@ class MainViewModel(
                 latitude = _uiState.value.latitude,
                 longitude = _uiState.value.longitude
             )
-            delay(400)
+            delay(60)
             getCurrentData()
             getHourlyData()
             getDailyForecastData()

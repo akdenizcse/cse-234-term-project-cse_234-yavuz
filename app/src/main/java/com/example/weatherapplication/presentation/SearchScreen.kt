@@ -32,9 +32,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import com.example.weatherapplication.Screen
 import com.example.weatherapplication.fontFamily
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 @Composable
 fun SearchScreen(
@@ -94,12 +97,12 @@ fun SearchScreen(
                         IconButton(onClick = {
                             coroutineScope.launch {
                                 mainViewModel.getLocationDataWithLocationKey(locationKey = searchResults[it].Key)
-                                delay(400)
                                 mainViewModel.getCurrentData()
                                 mainViewModel.getHourlyData()
                                 mainViewModel.getDailyForecastData()
-                                delay(300)
-                                navController.popBackStack()
+                                withContext(Dispatchers.Main){
+                                    navController.navigate(Screen.MainScreen.route)
+                                }
                             }
                         }
                         ) {

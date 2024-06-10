@@ -110,7 +110,7 @@ class MainActivity : ComponentActivity() {
                     composable(
                         route = Screen.FavoritesScreen.route,
                     ) {
-                        FavoritesScreen(mainViewModel = viewModel, onClose = { })
+                        FavoritesScreen(mainViewModel = viewModel, onClose = { }, navController = navController)
                     }
                     composable(
                         route = Screen.SearchScreen.route

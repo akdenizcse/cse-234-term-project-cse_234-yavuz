@@ -15,6 +15,6 @@ data class MainUiState(
     var dailyData: DailyWeatherForecast?=null,
     val searchResult: List<SearchValues>?=null,
     var isLoading: Boolean = false,
-    val apiKey: String ="T99aYclk3KjV2FVV3Q7SyAzeVGHKJ3tM"
+    val apiKey: String ="Gzjr81e3v0ALUMgqeGkwCEMaoUDLce78"
 )
 
