@@ -1,0 +1,32 @@
+package com.example.weatherapplication.data.model.DailyWeatherForecast
+
+data class Day(
+    val CloudCover: Double,
+    val Evapotranspiration: Evapotranspiration,
+    val HasPrecipitation: Boolean,
+    val HoursOfIce: Double,
+    val HoursOfPrecipitation: Double,
+    val HoursOfRain: Double,
+    val HoursOfSnow: Double,
+    val Ice: Ice,
+    val IceProbability: Double,
+    val Icon: Int,
+    val IconPhrase: String,
+    val LongPhrase: String,
+    val PrecipitationIntensity: String,
+    val PrecipitationProbability: Double,
+    val PrecipitationType: String,
+    val Rain: Rain,
+    val RainProbability: Double,
+    val RelativeHumidity: RelativeHumidity,
+    val ShortPhrase: String,
+    val Snow: Snow,
+    val SnowProbability: Double,
+    val SolarIrradiance: SolarIrradiance,
+    val ThunderstormProbability: Double,
+    val TotalLiquid: TotalLiquid,
+    val WetBulbGlobeTemperature: WetBulbGlobeTemperature,
+    val WetBulbTemperature: WetBulbTemperature,
+    val Wind: Wind,
+    val WindGust: WindGust
+)
